@@ -226,25 +226,28 @@ class Dataset(object):
             labels, np.ndarray
         ), "Variable labels should be of type 'np.ndarray'."
 
+        # Reshapes input batch into (batch_size, final_image_height, final_image_width).
+        images = images.reshape(
+            (
+                self.model_configuration["model"]["batch_size"],
+                self.model_configuration["model"]["final_image_height"],
+                self.model_configuration["model"]["final_image_width"],
+            )
+        )
+
         # Iterates across images in the batch.
         n_images = len(images)
         for image_id in range(n_images):
 
             # Checks if probability is greater than 0.5. If greater then inverts black & white image -> white & black.
             if random.random() >= 0.5:
-                images[image_id] = self.invert_image(images[image_id])
+                images[image_id, :, :] = self.invert_image(images[image_id])
 
-        # Converts images into tensor of shape (batch, height, width, n_channels), and converts pixels into 0 - 1 range.
-        input_batch = tf.convert_to_tensor(
-            images.reshape(
-                (
-                    self.model_configuration["model"]["batch_size"],
-                    self.model_configuration["model"]["final_image_height"],
-                    self.model_configuration["model"]["final_image_width"],
-                    self.model_configuration["model"]["n_channels"],
-                )
-            )
-        )
+        # Adds extra dimension to the images array.
+        images = np.expand_dims(images, axis=3)
+
+        # Converts images into tensor, and converts pixels into 0 - 1 range.
+        input_batch = tf.convert_to_tensor(images)
         input_batch = tf.cast(input_batch, dtype=tf.float32)
         input_batch /= 255.0
 
