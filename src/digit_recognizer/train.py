@@ -427,3 +427,45 @@ class Train(object):
                 )
             )
         add_to_log("")
+
+    def validate_model_per_epoch(self, epoch: int) -> None:
+        """Validates the model using validation dataset for current epoch.
+
+        Validates the model using validation dataset for current epoch.
+
+        Args:
+            epoch: An integer for the number of current epoch.
+
+        Returns:
+            None.
+        """
+        # Asserts type & value of the arguments.
+        assert isinstance(epoch, int), "Variable current_epoch should be of type 'int'."
+
+        # Iterates across batches in the train dataset.
+        for batch, (images, labels) in enumerate(
+            self.dataset.validation_dataset.take(
+                self.dataset.n_validation_steps_per_epoch
+            )
+        ):
+            batch_start_time = time.time()
+
+            # Loads input & target sequences for current batch as tensors.
+            input_batch, target_batch = self.dataset.load_input_target_batches(
+                images.numpy(), labels.numpy()
+            )
+
+            # Validates the model using the current input and target batch.
+            self.validation_step(input_batch, target_batch)
+            batch_end_time = time.time()
+
+            add_to_log(
+                "Epoch={}, Batch={}, Validation loss={}, Validation accuracy={}, Time taken={} sec.".format(
+                    epoch + 1,
+                    batch,
+                    str(round(self.validation_loss.result().numpy(), 3)),
+                    str(round(self.validation_accuracy.result().numpy(), 3)),
+                    round(batch_end_time - batch_start_time, 3),
+                )
+            )
+        add_to_log("")
