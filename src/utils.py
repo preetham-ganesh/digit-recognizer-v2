@@ -2,6 +2,8 @@ import os
 import logging
 import json
 
+import tensorflow as tf
+
 from typing import Dict, Any
 
 
