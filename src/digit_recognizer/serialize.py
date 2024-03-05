@@ -97,6 +97,54 @@ def serialize_model(model_version: str) -> None:
             prediction = self.model([inputs], False, None)
             return prediction
 
+    # Exports trained tensorflow model as tensorflow module for serving.
+    exported_model = ExportModel(model)
+
+    # Predicts output for the sample input using the Exported model.
+    output_0 = exported_model.predict(
+        tf.ones(
+            (
+                10,
+                trainer.model_configuration["model"]["final_image_height"],
+                trainer.model_configuration["model"]["final_image_width"],
+                trainer.model_configuration["model"]["n_channels"],
+            )
+        )
+    )
+
+    # Saves the tensorflow object created from the loaded model.
+    home_directory_path = os.getcwd()
+    tf.saved_model.save(
+        exported_model,
+        "{}/models/digit_recognizer/v{}/serialized".format(
+            home_directory_path, model_version
+        ),
+    )
+
+    # Loads the serialized model to check if the loaded model is callable.
+    exported_model = tf.saved_model.load(
+        "{}/models/digit_recognizer/v{}/serialized".format(
+            home_directory_path, model_version
+        ),
+    )
+    output_1 = exported_model.predict(
+        tf.ones(
+            (
+                10,
+                trainer.model_configuration["model"]["final_image_height"],
+                trainer.model_configuration["model"]["final_image_width"],
+                trainer.model_configuration["model"]["n_channels"],
+            )
+        )
+    )
+
+    # Checks if the shape between output from saved & loaded models matches.
+    assert (
+        output_0.shape == output_1.shape
+    ), "Shape does not match between the output from saved & loaded models."
+    add_to_log("Finished serializing model & configuration files.")
+    add_to_log("")
+
 
 def main():
     # Parses the arguments.
