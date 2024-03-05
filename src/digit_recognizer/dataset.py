@@ -5,6 +5,7 @@ from sklearn.utils import shuffle
 import tensorflow as tf
 import numpy as np
 import cv2
+import random
 
 from src.utils import add_to_log
 
@@ -194,3 +195,54 @@ class Dataset(object):
         # Inverts the image from black & white to white & black
         _, inverted_image = cv2.threshold(image, 127, 255, cv2.THRESH_BINARY_INV)
         return inverted_image
+
+    def load_input_target_batches(
+        self, images: np.ndarray, labels: np.ndarray
+    ) -> List[tf.Tensor]:
+        """Load input & target batchs for images & labels.
+
+        Load input & target batchs for images & labels.
+
+        Args:
+            images: A NumPy array for images in current batch.
+            labels: A NumPy array for labels in current batch.
+
+        Returns:
+            A list of tensors for the input & target batches generated from images & labels.
+        """
+        # Checks types & values of arguments.
+        assert isinstance(
+            images, np.ndarray
+        ), "Variable images should be of type 'np.ndarray'."
+        assert isinstance(
+            labels, np.ndarray
+        ), "Variable labels should be of type 'np.ndarray'."
+
+        # Iterates across images in the batch.
+        n_images = len(images)
+        for image_id in range(n_images):
+
+            # Checks if probability is greater than 0.5. If greater then inverts black & white image -> white & black.
+            if random.random() >= 0.5:
+                images[image_id] = self.invert_image(images[image_id])
+
+        # Converts images into tensor of shape (batch, height, width, n_channels), and converts pixels into 0 - 1 range.
+        input_batch = tf.convert_to_tensor(
+            images.reshape(
+                (
+                    self.model_configuration["model"]["batch_size"],
+                    self.model_configuration["model"]["final_image_height"],
+                    self.model_configuration["model"]["final_image_width"],
+                    self.model_configuration["model"]["n_channels"],
+                )
+            )
+        )
+        input_batch = tf.cast(input_batch, dtype=tf.float32)
+        input_batch /= 255.0
+
+        # Converts labels into categorical tensor.
+        target_batch = tf.keras.utils.to_categorical(
+            labels, num_classes=self.model_configuration["model"]["n_classes"]
+        )
+        target_batch = tf.convert_to_tensor(target_batch, dtype=tf.int8)
+        return [input_batch, target_batch]
