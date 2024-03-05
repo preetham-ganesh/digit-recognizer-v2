@@ -12,8 +12,11 @@ warnings.filterwarnings("ignore")
 logging.getLogger("tensorflow").setLevel(logging.FATAL)
 
 
-from src.utils import load_json_file
+import tensorflow as tf
+
+from src.utils import load_json_file, add_to_log
 from src.digit_recognizer.dataset import Dataset
+from src.digit_recognizer.model import Model
 
 
 class Train(object):
@@ -78,3 +81,51 @@ class Train(object):
 
         # Converts split data tensorflow dataset and slices them based on batch size.
         self.dataset.shuffle_slice_dataset()
+
+    def load_model(self, mode: str) -> None:
+        """Loads model & other utilies for training.
+
+        Loads model & other utilies for training.
+
+        Args:
+            mode: A string for mode by which the should be loaded, i.e., with latest checkpoints or not.
+
+        Returns:
+            None.
+        """
+        # Asserts type & value of the arguments.
+        assert isinstance(mode, str), "Variable mode should be of type 'str'."
+        assert mode in [
+            "train",
+            "predict",
+        ], "Variable mode should have 'train' or 'predict' as value."
+
+        # Loads model for current model configuration.
+        self.model = Model(self.model_configuration)
+
+        # Loads the optimizer.
+        self.optimizer = tf.keras.optimizers.Adam(
+            learning_rate=self.model_configuration["model"]["optimizer"][
+                "learning_rate"
+            ]
+        )
+
+        # Creates checkpoint manager for the neural network model and loads the optimizer.
+        self.checkpoint_directory_path = (
+            "{}/models/digit_recognizer/v{}/checkpoints".format(
+                self.home_directory_path, self.model_version
+            )
+        )
+        checkpoint = tf.train.Checkpoint(model=self.model)
+        self.manager = tf.train.CheckpointManager(
+            checkpoint, directory=self.checkpoint_directory_path, max_to_keep=3
+        )
+
+        # If mode is predict, then the trained checkpoint is restored.
+        if mode == "predict":
+            checkpoint.restore(
+                tf.train.latest_checkpoint(self.checkpoint_directory_path)
+            )
+
+        add_to_log("Finished loading model for current configuration.")
+        add_to_log("")
