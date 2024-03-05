@@ -3,6 +3,8 @@ import os
 import pandas as pd
 from sklearn.utils import shuffle
 import tensorflow as tf
+import numpy as np
+import cv2
 
 from src.utils import add_to_log
 
@@ -171,3 +173,24 @@ class Dataset(object):
             "No. of test steps per epoch: {}".format(self.n_test_steps_per_epoch)
         )
         add_to_log("")
+
+    def invert_image(self, image: np.ndarray) -> np.ndarray:
+        """Inverts the image from black & white to white & black.
+
+        Inverts the image from black & white to white & black.
+
+        Args:
+            image: A NumPy array for the input image.
+
+        Returns:
+            A NumPy array for inverted version of the input image.
+        """
+        # Checks type & values of arguments.
+        assert isinstance(
+            image, np.ndarray
+        ), "Variable image should be of type 'np.ndarray'."
+        assert len(image.shape) == 3, "Variable image should be 3 dimensional."
+
+        # Inverts the image from black & white to white & black
+        _, inverted_image = cv2.threshold(image, 127, 255, cv2.THRESH_BINARY_INV)
+        return inverted_image
