@@ -80,6 +80,23 @@ def serialize_model(model_version: str) -> None:
             # Initializes class variables.
             self.model = model
 
+        @tf.function(
+            input_signature=[tf.TensorSpec(shape=input_shape, dtype=tf.float32)]
+        )
+        def predict(self, inputs: tf.Tensor) -> tf.Tensor:
+            """Input image(s) are passed through the model for prediction.
+
+            Input image(s) are passed through the model for prediction.
+
+            Args:
+                inputs: A tensor for the processed image(s) based on model requirements.
+
+            Returns:
+                A tensor with prediction for each processed image passed as input.
+            """
+            prediction = self.model([inputs], False, None)
+            return prediction
+
 
 def main():
     # Parses the arguments.
