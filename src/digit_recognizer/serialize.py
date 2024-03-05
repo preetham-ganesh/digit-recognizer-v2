@@ -14,6 +14,47 @@ logging.getLogger("tensorflow").setLevel(logging.FATAL)
 
 
 from src.utils import create_log, add_to_log, set_physical_devices_memory_limit
+from src.digit_recognizer.train import Train
+
+
+def serialize_model(model_version: str) -> None:
+    """Serializes model files in the serialized model directory.
+
+    Serializes model files in the serialized model directory.
+
+    Args:
+        model_version: A string for the version of the model about to be serialized.
+
+    Returns:
+        None.
+    """
+    # Checks type & values of arguments.
+    assert isinstance(
+        model_version, str
+    ), "Variable model_version should be of type 'str'."
+
+    # Creates an object for the Train class.
+    trainer = Train(model_version)
+
+    # Loads model configuration for current model version.
+    trainer.load_model_configuration()
+
+    # Loads the model with latest checkpoint.
+    trainer.load_model("predict")
+
+    # Generates summary & plot for loaded model.
+    trainer.generate_model_summary_and_plot(False)
+
+    # Builds plottable graph for the model.
+    model = trainer.model.build_graph()
+
+    # Defines input shape for exported model's input signature.
+    input_shape = [
+        None,
+        trainer.model_configuration["model"]["final_image_height"],
+        trainer.model_configuration["model"]["final_image_width"],
+        trainer.model_configuration["model"]["n_channels"],
+    ]
 
 
 def main():
