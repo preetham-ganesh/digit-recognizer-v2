@@ -14,6 +14,7 @@ logging.getLogger("tensorflow").setLevel(logging.FATAL)
 
 
 import tensorflow as tf
+import matplotlib.pyplot as plt
 
 from src.utils import (
     load_json_file,
@@ -587,3 +588,74 @@ class Train(object):
                 add_to_log("")
                 break
             add_to_log("")
+
+    def generate_model_history_plot(self, metric_name: str) -> None:
+        """Generates plot for model training & validation history.
+
+        Generates plot for model training & validation history.
+
+        Args:
+            metric_name: A string for the name of the current metric for which the plot should be generated.
+
+        Returns:
+            None.
+        """
+        # Asserts type & value of the arguments.
+        assert isinstance(
+            metric_name, str
+        ), "Variable metric_name should be of type 'str'."
+        assert metric_name in [
+            "loss",
+            "accuracy",
+        ], "Variable metric_name should have value as 'loss' or 'accuracy'."
+
+        # Specifications used to generate the plot, i.e., font size and size of the plot.
+        font = {"size": 28}
+        plt.rc("font", **font)
+        plt.figure(num=None, figsize=(30, 15))
+
+        # Computes number of epochs in the model's training & validation history.
+        n_epochs = len(self.model_history["train_{}".format(metric_name)])
+
+        # Converts train and validation metrics from string format to floating point format.
+        epochs = [id_0 for id_0 in range(1, n_epochs + 1)]
+        train_metrics = [
+            float(metric)
+            for metric in self.model_history["train_{}".format(metric_name)]
+        ]
+        validation_metrics = [
+            float(metric)
+            for metric in self.model_history["validation_{}".format(metric_name)]
+        ]
+
+        # Generates plot for training and validation metrics
+        plt.plot(
+            epochs,
+            train_metrics,
+            color="orange",
+            linewidth=3,
+            label="train_{}".format(metric_name),
+        )
+        plt.plot(
+            epochs,
+            validation_metrics,
+            color="blue",
+            linewidth=3,
+            label="validation_{}".format(metric_name),
+        )
+
+        # Generates the plot for the epochs vs metrics.
+        plt.xlabel("epochs")
+        plt.ylabel(metric_name)
+        plt.xticks(epochs)
+        plt.legend(loc="upper left")
+        plt.grid(color="black", linestyle="-.", linewidth=2, alpha=0.3)
+
+        # Saves plot using the following path.
+        plt.savefig(
+            "{}/model_history_{}.png".format(
+                self.reports_directory_path,
+                metric_name,
+            )
+        )
+        plt.close()
