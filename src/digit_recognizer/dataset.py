@@ -1,3 +1,9 @@
+import os
+
+import pandas as pd
+
+from src.utils import add_to_log
+
 from typing import Dict, Any, List
 
 
@@ -22,3 +28,28 @@ class Dataset(object):
 
         # Initalizes class variables.
         self.model_configuration = model_configuration
+
+    def load_data(self) -> None:
+        """Loads original train CSV file as a dataframe.
+
+        Loads original train CSV file as a dataframe.
+
+        Args:
+            None.
+
+        Returns:
+            None.
+        """
+        self.home_directory_path = os.getcwd()
+        self.original_train_data = pd.read_csv(
+            "{}/data/raw_data/digit_recognizer/train.csv".format(
+                self.home_directory_path
+            )
+        )
+
+        add_to_log(
+            "No. of examples in the original train data: {}".format(
+                len(self.original_train_data)
+            )
+        )
+        add_to_log("")
