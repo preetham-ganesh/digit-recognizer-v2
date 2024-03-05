@@ -13,6 +13,7 @@ logging.getLogger("tensorflow").setLevel(logging.FATAL)
 
 
 from src.utils import load_json_file
+from src.digit_recognizer.dataset import Dataset
 
 
 class Train(object):
@@ -54,3 +55,26 @@ class Train(object):
         self.model_configuration = load_json_file(
             "v{}".format(self.model_version), model_configuration_directory_path
         )
+
+    def load_dataset(self) -> None:
+        """Loads dataset based on model configuration.
+
+        Loads dataset based on model configuration.
+
+        Args:
+            None.
+
+        Returns:
+            None.
+        """
+        # Initializes object for the Dataset class.
+        self.dataset = Dataset(self.model_configuration)
+
+        # Loads original train CSV file as a dataframe.
+        self.dataset.load_data()
+
+        # Splits original train data into new train, validation & test data.
+        self.dataset.split_dataset()
+
+        # Converts split data tensorflow dataset and slices them based on batch size.
+        self.dataset.shuffle_slice_dataset()
