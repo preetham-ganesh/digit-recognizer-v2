@@ -469,3 +469,17 @@ class Train(object):
                 )
             )
         add_to_log("")
+
+    def save_model(self) -> None:
+        """Saves the model after checking performance metrics in current epoch.
+
+        Saves the model after checking performance metrics in current epoch.
+
+        Args:
+            None.
+
+        Returns:
+            None.
+        """
+        self.manager.save()
+        add_to_log("Checkpoint saved at {}.".format(self.checkpoint_directory_path))
