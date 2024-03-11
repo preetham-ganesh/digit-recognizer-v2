@@ -1,0 +1,6 @@
+tensorflow==2.15.0
+matplotlib==3.8.3
+opencv-python
+sklearn==1.4.1
+numpy==1.26.2
+pandas==2.1.1
