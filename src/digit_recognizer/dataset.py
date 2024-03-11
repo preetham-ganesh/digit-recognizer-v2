@@ -190,11 +190,19 @@ class Dataset(object):
         assert isinstance(
             image, np.ndarray
         ), "Variable image should be of type 'np.ndarray'."
-        assert len(image.shape) == 3, "Variable image should be 3 dimensional."
 
-        # Inverts the image from black & white to white & black
-        _, inverted_image = cv2.threshold(image, 127, 255, cv2.THRESH_BINARY_INV)
-        return inverted_image
+        # Converts 2D image into 3D by stacking it.
+        new_image = np.zeros((image.shape[0], image.shape[1], 3))
+        new_image[:, :, 0] = image
+        new_image[:, :, 1] = image
+        new_image[:, :, 2] = image
+
+        # Inverts the image from black & white to white & black.
+        _, inverted_image = cv2.threshold(new_image, 127, 255, cv2.THRESH_BINARY_INV)
+
+        # Extracts the 1st channel from the inverted image.
+        inverted_2d_image = inverted_image[:, :, 0]
+        return inverted_2d_image
 
     def load_input_target_batches(
         self, images: np.ndarray, labels: np.ndarray
@@ -218,25 +226,28 @@ class Dataset(object):
             labels, np.ndarray
         ), "Variable labels should be of type 'np.ndarray'."
 
+        # Reshapes input batch into (batch_size, final_image_height, final_image_width).
+        images = images.reshape(
+            (
+                self.model_configuration["model"]["batch_size"],
+                self.model_configuration["model"]["final_image_height"],
+                self.model_configuration["model"]["final_image_width"],
+            )
+        )
+
         # Iterates across images in the batch.
         n_images = len(images)
         for image_id in range(n_images):
 
             # Checks if probability is greater than 0.5. If greater then inverts black & white image -> white & black.
             if random.random() >= 0.5:
-                images[image_id] = self.invert_image(images[image_id])
+                images[image_id, :, :] = self.invert_image(images[image_id])
 
-        # Converts images into tensor of shape (batch, height, width, n_channels), and converts pixels into 0 - 1 range.
-        input_batch = tf.convert_to_tensor(
-            images.reshape(
-                (
-                    self.model_configuration["model"]["batch_size"],
-                    self.model_configuration["model"]["final_image_height"],
-                    self.model_configuration["model"]["final_image_width"],
-                    self.model_configuration["model"]["n_channels"],
-                )
-            )
-        )
+        # Adds extra dimension to the images array.
+        images = np.expand_dims(images, axis=3)
+
+        # Converts images into tensor, and converts pixels into 0 - 1 range.
+        input_batch = tf.convert_to_tensor(images)
         input_batch = tf.cast(input_batch, dtype=tf.float32)
         input_batch /= 255.0
 
