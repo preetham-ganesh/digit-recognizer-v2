@@ -1,17 +1,5 @@
 import os
-import sys
-import warnings
-import argparse
-import logging
 import time
-
-
-os.environ["TF_CPP_MIN_LOG_LEVEL"] = "3"
-BASE_PATH = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-sys.path.append(BASE_PATH)
-warnings.filterwarnings("ignore")
-logging.getLogger("tensorflow").setLevel(logging.FATAL)
-
 
 import tensorflow as tf
 import mlflow
@@ -19,8 +7,6 @@ import mlflow
 from src.utils import (
     load_json_file,
     check_directory_path_existence,
-    save_json_file,
-    set_physical_devices_memory_limit,
 )
 from src.dataset import Dataset
 from src.model import Model
@@ -89,24 +75,17 @@ class Train(object):
         # Converts split data tensorflow dataset and slices them based on batch size.
         self.dataset.shuffle_slice_dataset()
 
-    def load_model(self, mode: str) -> None:
+    def load_model(self) -> None:
         """Loads model & other utilies for training.
 
         Loads model & other utilies for training.
 
         Args:
-            mode: A string for mode by which the should be loaded, i.e., with latest checkpoints or not.
+            None.
 
         Returns:
             None.
         """
-        # Asserts type & value of the arguments.
-        assert isinstance(mode, str), "Variable mode should be of type 'str'."
-        assert mode in [
-            "train",
-            "predict",
-        ], "Variable mode should have 'train' or 'predict' as value."
-
         # Loads model for current model configuration.
         self.model = Model(self.model_configuration)
 
@@ -121,17 +100,10 @@ class Train(object):
         self.checkpoint_directory_path = "{}/models/v{}/checkpoints".format(
             self.home_directory_path, self.model_version
         )
-        checkpoint = tf.train.Checkpoint(model=self.model)
+        self.checkpoint = tf.train.Checkpoint(model=self.model)
         self.manager = tf.train.CheckpointManager(
-            checkpoint, directory=self.checkpoint_directory_path, max_to_keep=3
+            self.checkpoint, directory=self.checkpoint_directory_path, max_to_keep=3
         )
-
-        # If mode is predict, then the trained checkpoint is restored.
-        if mode == "predict":
-            checkpoint.restore(
-                tf.train.latest_checkpoint(self.checkpoint_directory_path)
-            )
-
         print("Finished loading model for current configuration.")
         print()
 
@@ -273,7 +245,7 @@ class Train(object):
 
         # Computes the model output for current batch, and metrics for current model output.
         with tf.GradientTape() as tape:
-            predictions = self.model([input_batch], True, None)
+            predictions = self.model([input_batch], training=True, masks=None)
             loss = self.compute_loss(target_batch, predictions[0])
             accuracy = self.compute_accuracy(target_batch, predictions[0])
 
@@ -308,7 +280,7 @@ class Train(object):
         ), "Variable target_batch should be of type 'tf.Tensor'."
 
         # Computes the model output for current batch, and metrics for current model output.
-        predictions = self.model([input_batch], False, None)
+        predictions = self.model([input_batch], training=False, masks=None)
         loss = self.compute_loss(target_batch, predictions[0])
         accuracy = self.compute_accuracy(target_batch, predictions[0])
 
@@ -558,6 +530,15 @@ class Train(object):
         # Resets states for validation metrics.
         self.reset_metrics_trackers()
 
+        self.checkpoint.restore(
+            tf.train.latest_checkpoint(self.checkpoint_directory_path)
+        )
+
+        print(
+            round(self.validation_loss.result().numpy(), 3),
+            round(self.validation_accuracy.result().numpy(), 3),
+        )
+
         # Iterates across batches in the train dataset.
         for batch, (images, labels) in enumerate(
             self.dataset.test_dataset.take(self.dataset.n_test_steps_per_epoch)
@@ -569,6 +550,12 @@ class Train(object):
 
             # Tests the model using the current input and target batch.
             self.validation_step(input_batch, target_batch)
+
+            print(
+                batch,
+                round(self.validation_loss.result().numpy(), 3),
+                round(self.validation_accuracy.result().numpy(), 3),
+            )
 
         print(
             "Test loss={}.".format(str(round(self.validation_loss.result().numpy(), 3)))
@@ -584,8 +571,7 @@ class Train(object):
         mlflow.log_metrics(
             {
                 "test_loss": self.validation_loss.result().numpy(),
-                "test_dice_coefficient": self.validation_dice.result().numpy(),
-                "test_iou": self.validation_iou.result().numpy(),
+                "test_accuracy": self.validation_accuracy.result().numpy(),
             }
         )
 
@@ -671,9 +657,7 @@ class Train(object):
 
         # Loads the serialized model to check if the loaded model is callable.
         exported_model = tf.saved_model.load(
-            "{}/models/flair_abnormality_segmentation/v{}/serialized".format(
-                home_directory_path, self.model_version
-            ),
+            "{}/models/v{}/serialized".format(home_directory_path, self.model_version),
         )
         output_1 = exported_model.predict(
             tf.ones(
@@ -704,55 +688,3 @@ class Train(object):
             self.model_configuration,
             "v{}/model_configuration.json".format(self.model_version),
         )
-
-
-def main():
-    # Parses the arguments.
-    parser = argparse.ArgumentParser()
-    parser.add_argument(
-        "-mv",
-        "--model_version",
-        type=str,
-        required=True,
-        help="Version by which the trained model files should be saved as.",
-    )
-    args = parser.parse_args()
-
-    # Creates an logger object for storing terminal output.
-    create_log("train_v{}".format(args.model_version), "logs/digit_recognizer")
-    add_to_log("")
-
-    # Sets memory limit of GPU if found in the system.
-    set_physical_devices_memory_limit()
-
-    # Creates an object for the Train class.
-    trainer = Train(args.model_version)
-
-    # Loads model configuration for current model version.
-    trainer.load_model_configuration()
-
-    # Loads dataset based on dataset version in the model configuration.
-    trainer.load_dataset()
-
-    # Loads model & other utilies for training it.
-    trainer.load_model("train")
-
-    # Generates summary and plot for loaded model.
-    trainer.generate_model_summary_and_plot(True)
-
-    # Trains & validates the model using train & validation dataset.
-    trainer.fit()
-
-    # Generates model history plots for all performance metrics.
-    trainer.generate_model_history_plot("loss")
-    trainer.generate_model_history_plot("accuracy")
-
-    # Loads the model with latest checkpoint.
-    trainer.load_model("predict")
-
-    # Tests the model using the test dataset.
-    trainer.test_model()
-
-
-if __name__ == "__main__":
-    main()
