@@ -444,7 +444,7 @@ class Train(object):
             None.
         """
         self.manager.save()
-        add_to_log("Checkpoint saved at {}.".format(self.checkpoint_directory_path))
+        print("Checkpoint saved at {}.".format(self.checkpoint_directory_path))
 
     def early_stopping(self) -> bool:
         """Stops the model from learning further if the performance has not improved from previous epoch.
@@ -471,7 +471,7 @@ class Train(object):
             round(self.validation_loss.result().numpy(), 3)
         ):
             self.patience_count = 0
-            add_to_log(
+            print(
                 "Best validation loss changed from {} to {}".format(
                     str(self.best_validation_loss),
                     str(round(self.validation_loss.result().numpy(), 3)),
@@ -486,8 +486,8 @@ class Train(object):
         # has not improved is incremented by 1.
         elif self.patience_count < 2:
             self.patience_count += 1
-            add_to_log("Best validation loss did not improve.")
-            add_to_log("Checkpoint not saved.")
+            print("Best validation loss did not improve.")
+            print("Checkpoint not saved.")
 
         # If the number of times the model did not improve is greater than 4, then model is stopped from training.
         else:
@@ -508,9 +508,6 @@ class Train(object):
         # Initializes TensorFlow trackers which computes the mean of all metrics.
         self.initialize_metric_trackers()
 
-        # Initializes model history dataframe.
-        self.initialize_model_history()
-
         # Iterates across epochs for training the neural network model.
         for epoch in range(self.model_configuration["model"]["epochs"]):
             epoch_start_time = time.time()
@@ -524,11 +521,8 @@ class Train(object):
             # Validates the model using batches in the validation dataset.
             self.validate_model_per_epoch(epoch)
 
-            # Updates model history dataframe with performance metrics for current epoch.
-            self.update_model_history(epoch)
-
             epoch_end_time = time.time()
-            add_to_log(
+            print(
                 "Epoch={}, Train loss={}, Validation loss={}, Train Accuracy={}, Validation Accuracy={}, "
                 "Time taken={} sec.".format(
                     epoch + 1,
@@ -543,83 +537,12 @@ class Train(object):
             # Stops the model from learning further if the performance has not improved from previous epoch.
             model_training_status = self.early_stopping()
             if not model_training_status:
-                add_to_log(
+                print(
                     "Model did not improve after 4th time. Model stopped from training further."
                 )
-                add_to_log("")
+                print()
                 break
-            add_to_log("")
-
-    def generate_model_history_plot(self, metric_name: str) -> None:
-        """Generates plot for model training & validation history.
-
-        Generates plot for model training & validation history.
-
-        Args:
-            metric_name: A string for the name of the current metric for which the plot should be generated.
-
-        Returns:
-            None.
-        """
-        # Asserts type & value of the arguments.
-        assert isinstance(
-            metric_name, str
-        ), "Variable metric_name should be of type 'str'."
-        assert metric_name in [
-            "loss",
-            "accuracy",
-        ], "Variable metric_name should have value as 'loss' or 'accuracy'."
-
-        # Specifications used to generate the plot, i.e., font size and size of the plot.
-        font = {"size": 28}
-        plt.rc("font", **font)
-        plt.figure(num=None, figsize=(30, 15))
-
-        # Computes number of epochs in the model's training & validation history.
-        n_epochs = len(self.model_history["train_{}".format(metric_name)])
-
-        # Converts train and validation metrics from string format to floating point format.
-        epochs = [id_0 for id_0 in range(1, n_epochs + 1)]
-        train_metrics = [
-            float(metric)
-            for metric in self.model_history["train_{}".format(metric_name)]
-        ]
-        validation_metrics = [
-            float(metric)
-            for metric in self.model_history["validation_{}".format(metric_name)]
-        ]
-
-        # Generates plot for training and validation metrics
-        plt.plot(
-            epochs,
-            train_metrics,
-            color="orange",
-            linewidth=3,
-            label="train_{}".format(metric_name),
-        )
-        plt.plot(
-            epochs,
-            validation_metrics,
-            color="blue",
-            linewidth=3,
-            label="validation_{}".format(metric_name),
-        )
-
-        # Generates the plot for the epochs vs metrics.
-        plt.xlabel("epochs")
-        plt.ylabel(metric_name)
-        plt.xticks(epochs)
-        plt.legend(loc="upper left")
-        plt.grid(color="black", linestyle="-.", linewidth=2, alpha=0.3)
-
-        # Saves plot using the following path.
-        plt.savefig(
-            "{}/model_history_{}.png".format(
-                self.reports_directory_path,
-                metric_name,
-            )
-        )
-        plt.close()
+            print()
 
     def test_model(self) -> None:
         """Tests the trained model using the test dataset.
