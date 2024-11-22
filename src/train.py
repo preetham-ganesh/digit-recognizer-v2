@@ -412,7 +412,7 @@ class Train(object):
             self.validation_step(input_batch, target_batch)
             batch_end_time = time.time()
 
-            add_to_log(
+            print(
                 "Epoch={}, Batch={}, Validation loss={}, Validation accuracy={}, Time taken={} sec.".format(
                     epoch + 1,
                     batch,
@@ -421,7 +421,16 @@ class Train(object):
                     round(batch_end_time - batch_start_time, 3),
                 )
             )
-        add_to_log("")
+
+        # Logs train metrics for current epoch.
+        mlflow.log_metrics(
+            {
+                "validation_loss": self.validation_loss.result().numpy(),
+                "validation_accuracy": self.validation_accuracy.result().numpy(),
+            },
+            step=epoch,
+        )
+        print()
 
     def save_model(self) -> None:
         """Saves the model after checking performance metrics in current epoch.
