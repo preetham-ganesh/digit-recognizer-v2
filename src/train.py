@@ -608,6 +608,28 @@ class Train(object):
             self.model_configuration["model"]["n_channels"],
         ]
 
+        class ExportModel(tf.Module):
+            """Exports trained tensorflow model as tensorflow module for serving."""
+
+            def __init__(self, model: tf.keras.Model) -> None:
+                """Initializes the variables in the class.
+
+                Initializes the variables in the class.
+
+                Args:
+                    model: A tensorflow model for the model trained with latest checkpoints.
+
+                Returns:
+                    None.
+                """
+                # Asserts type of input arguments.
+                assert isinstance(
+                    model, tf.keras.Model
+                ), "Variable model should be of type 'tensorflow.keras.Model'."
+
+                # Initializes class variables.
+                self.model = model
+
 
 def main():
     # Parses the arguments.
