@@ -2,6 +2,7 @@ import os
 
 import pandas as pd
 from sklearn.utils import shuffle
+from sklearn.model_selection import train_test_split
 import tensorflow as tf
 import numpy as np
 import cv2
@@ -66,34 +67,30 @@ class Dataset(object):
         Returns:
             None.
         """
-        # Computes number of examples in the train, validation and test datasets.
-        self.n_total_examples = len(self.original_train_data)
-        self.n_validation_examples = int(
-            self.model_configuration["dataset"]["split_percentage"]["validation"]
-            * self.n_total_examples
-        )
-        self.n_test_examples = int(
-            self.model_configuration["dataset"]["split_percentage"]["test"]
-            * self.n_total_examples
-        )
-        self.n_train_examples = (
-            self.n_total_examples - self.n_validation_examples - self.n_test_examples
-        )
-
         # Shuffles the original train data.
-        self.original_train_data = shuffle(self.original_train_data, random_state=2)
+        self.original_train_data = shuffle(self.original_train_data, random_state=42)
 
-        # Splits the original train data into new train, validation & test data.
-        self.new_validation_data = self.original_train_data[
-            : self.n_validation_examples
-        ]
-        self.new_test_data = self.original_train_data[
-            self.n_validation_examples : self.n_test_examples
-            + self.n_validation_examples
-        ]
-        self.new_train_data = self.original_train_data[
-            self.n_test_examples + self.n_validation_examples :
-        ]
+        # Splits the original train data into new train, validation & test data (in stratified manner).
+        train_data, self.new_test_data = train_test_split(
+            self.original_train_data,
+            test_size=self.model_configuration["dataset"]["split_percentage"]["test"],
+            stratify=self.original_train_data["label"],
+            random_state=42,
+        )
+        self.new_train_data, self.new_validation_data = train_test_split(
+            train_data,
+            test_size=self.model_configuration["dataset"]["split_percentage"][
+                "validation"
+            ],
+            stratify=train_data["label"],
+            random_state=42,
+        )
+        del train_data
+
+        # Stores size of new train, validation and test data.
+        self.n_train_examples = len(self.new_train_data)
+        self.n_validation_examples = len(self.new_validation_data)
+        self.n_test_examples = len(self.new_test_data)
 
         print("No. of examples in the new train data: {}".format(self.n_train_examples))
         print(
