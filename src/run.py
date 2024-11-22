@@ -69,7 +69,7 @@ def main():
     trainer.load_dataset()
 
     # Loads model & other utilies for training it.
-    trainer.load_model("train")
+    trainer.load_model()
 
     # Generates summary and plot for loaded model.
     trainer.generate_model_summary_and_plot(True)
