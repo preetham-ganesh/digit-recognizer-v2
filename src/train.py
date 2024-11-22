@@ -530,13 +530,9 @@ class Train(object):
         # Resets states for validation metrics.
         self.reset_metrics_trackers()
 
+        # Restore latest saved checkpoint if available.
         self.checkpoint.restore(
             tf.train.latest_checkpoint(self.checkpoint_directory_path)
-        )
-
-        print(
-            round(self.validation_loss.result().numpy(), 3),
-            round(self.validation_accuracy.result().numpy(), 3),
         )
 
         # Iterates across batches in the train dataset.
@@ -550,12 +546,6 @@ class Train(object):
 
             # Tests the model using the current input and target batch.
             self.validation_step(input_batch, target_batch)
-
-            print(
-                batch,
-                round(self.validation_loss.result().numpy(), 3),
-                round(self.validation_accuracy.result().numpy(), 3),
-            )
 
         print(
             "Test loss={}.".format(str(round(self.validation_loss.result().numpy(), 3)))
