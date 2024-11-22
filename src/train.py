@@ -570,15 +570,24 @@ class Train(object):
             # Tests the model using the current input and target batch.
             self.validation_step(input_batch, target_batch)
 
-        add_to_log(
+        print(
             "Test loss={}.".format(str(round(self.validation_loss.result().numpy(), 3)))
         )
-        add_to_log(
+        print(
             "Test accuracy={}.".format(
                 str(round(self.validation_accuracy.result().numpy(), 3))
             ),
         )
-        add_to_log("")
+        print()
+
+        # Logs test metrics for current epoch.
+        mlflow.log_metrics(
+            {
+                "test_loss": self.validation_loss.result().numpy(),
+                "test_dice_coefficient": self.validation_dice.result().numpy(),
+                "test_iou": self.validation_iou.result().numpy(),
+            }
+        )
 
 
 def main():
