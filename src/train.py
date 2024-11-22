@@ -589,6 +589,25 @@ class Train(object):
             }
         )
 
+    def serialize_model(self) -> None:
+        """Serializes model as TensorFlow module & saves it as MLFlow artifact.
+
+        Serializes model as TensorFlow module & saves it as MLFlow artifact.
+
+        Args:
+            None.
+
+        Returns:
+            None.
+        """
+        # Defines input shape for exported model's input signature.
+        input_shape = [
+            None,
+            self.model_configuration["model"]["final_image_height"],
+            self.model_configuration["model"]["final_image_width"],
+            self.model_configuration["model"]["n_channels"],
+        ]
+
 
 def main():
     # Parses the arguments.
