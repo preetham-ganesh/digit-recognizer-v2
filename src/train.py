@@ -630,6 +630,23 @@ class Train(object):
                 # Initializes class variables.
                 self.model = model
 
+            @tf.function(
+                input_signature=[tf.TensorSpec(shape=input_shape, dtype=tf.float32)]
+            )
+            def predict(self, images: tf.Tensor) -> tf.Tensor:
+                """Input image is passed through the model for prediction.
+
+                Input image is passed through the model for prediction.
+
+                Args:
+                    images: A tensor for the processed image for which the model should predict the result.
+
+                Return:
+                    An integer for the number predicted by the model for the current image.
+                """
+                prediction = self.model([images], training=False, masks=None)
+                return prediction
+
 
 def main():
     # Parses the arguments.
