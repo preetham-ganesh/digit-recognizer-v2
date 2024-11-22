@@ -361,7 +361,7 @@ class Train(object):
             self.train_step(input_batch, target_batch)
             batch_end_time = time.time()
 
-            add_to_log(
+            print(
                 "Epoch={}, Batch={}, Train loss={}, Train accuracy={}, Time taken={} sec.".format(
                     epoch + 1,
                     batch,
@@ -370,7 +370,16 @@ class Train(object):
                     round(batch_end_time - batch_start_time, 3),
                 )
             )
-        add_to_log("")
+
+        # Logs train metrics for current epoch.
+        mlflow.log_metrics(
+            {
+                "train_loss": self.train_loss.result().numpy(),
+                "train_accuracy": self.train_accuracy.result().numpy(),
+            },
+            step=epoch,
+        )
+        print()
 
     def validate_model_per_epoch(self, epoch: int) -> None:
         """Validates the model using validation dataset for current epoch.
