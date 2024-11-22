@@ -134,8 +134,8 @@ class Train(object):
                 tf.train.latest_checkpoint(self.checkpoint_directory_path)
             )
 
-        add_to_log("Finished loading model for current configuration.")
-        add_to_log("")
+        print("Finished loading model for current configuration.")
+        print()
 
     def generate_model_summary_and_plot(self, plot: bool) -> None:
         """Generates summary & plot for loaded model.
