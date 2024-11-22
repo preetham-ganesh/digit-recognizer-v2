@@ -327,10 +327,10 @@ class Train(object):
         Returns:
             None.
         """
-        self.train_loss.reset_states()
-        self.validation_loss.reset_states()
-        self.train_accuracy.reset_states()
-        self.validation_accuracy.reset_states()
+        self.train_loss.reset_state()
+        self.validation_loss.reset_state()
+        self.train_accuracy.reset_state()
+        self.validation_accuracy.reset_state()
 
     def train_model_per_epoch(self, epoch: int) -> None:
         """Trains the model using train dataset for current epoch.
