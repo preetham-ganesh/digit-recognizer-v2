@@ -7,7 +7,7 @@ import time
 
 
 os.environ["TF_CPP_MIN_LOG_LEVEL"] = "3"
-BASE_PATH = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+BASE_PATH = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.append(BASE_PATH)
 warnings.filterwarnings("ignore")
 logging.getLogger("tensorflow").setLevel(logging.FATAL)
@@ -18,14 +18,12 @@ import matplotlib.pyplot as plt
 
 from src.utils import (
     load_json_file,
-    add_to_log,
     check_directory_path_existence,
     save_json_file,
-    create_log,
     set_physical_devices_memory_limit,
 )
-from src.digit_recognizer.dataset import Dataset
-from src.digit_recognizer.model import Model
+from src.dataset import Dataset
+from src.model import Model
 
 
 class Train(object):
@@ -61,8 +59,8 @@ class Train(object):
             None.
         """
         self.home_directory_path = os.getcwd()
-        model_configuration_directory_path = (
-            "{}/configs/models/digit_recognizer".format(self.home_directory_path)
+        model_configuration_directory_path = "{}/configs".format(
+            self.home_directory_path
         )
         self.model_configuration = load_json_file(
             "v{}".format(self.model_version), model_configuration_directory_path
