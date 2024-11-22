@@ -14,14 +14,13 @@ logging.getLogger("tensorflow").setLevel(logging.FATAL)
 
 
 import tensorflow as tf
-import matplotlib.pyplot as plt
+import mlflow
 
 from src.utils import (
     load_json_file,
     check_directory_path_existence,
     save_json_file,
     set_physical_devices_memory_limit,
-    save_text_file,
 )
 from src.dataset import Dataset
 from src.model import Model
@@ -154,8 +153,10 @@ class Train(object):
         model_summary = list()
         model.summary(print_fn=lambda x: model_summary.append(x))
         model_summary = "\n".join(model_summary)
-        print(model_summary)
-        print()
+        mlflow.log_text(
+            model_summary,
+            "v{}/model_summary.txt".format(self.model_configuration["version"]),
+        )
 
         # Creates the following directory path if it does not exist.
         self.reports_directory_path = check_directory_path_existence(
@@ -171,34 +172,12 @@ class Train(object):
                 show_layer_names=True,
                 expand_nested=True,
             )
-            print(
-                "Finished saving model plot at {}/model_plot.png.".format(
-                    self.reports_directory_path
-                )
+
+            # Logs the saved model plot PNG file.
+            mlflow.log_artifact(
+                "{}/model_plot.png".format(self.reports_directory_path),
+                "v{}".format(self.model_configuration["version"]),
             )
-
-            # Saves string as a text file.
-            save_text_file(model_summary, "model_summary", self.reports_directory_path)
-            print()
-
-    def initialize_model_history(self) -> None:
-        """Creates empty dictionary for saving the model metrics for the current model.
-
-        Creates empty dictionary for saving the model metrics for the current model.
-
-        Args:
-            None.
-
-        Returns:
-            None.
-        """
-        self.model_history = {
-            "epoch": list(),
-            "train_loss": list(),
-            "validation_loss": list(),
-            "train_accuracy": list(),
-            "validation_accuracy": list(),
-        }
 
     def initialize_metric_trackers(self) -> None:
         """Initializes trackers which computes the mean of all metrics.
@@ -249,9 +228,7 @@ class Train(object):
         save_json_file(
             self.model_history,
             "history",
-            "models/digit_recognizer/v{}/reports".format(
-                self.model_configuration["version"]
-            ),
+            "models/v{}/reports".format(self.model_configuration["version"]),
         )
 
     def compute_loss(
