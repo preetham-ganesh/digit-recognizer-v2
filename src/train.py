@@ -21,6 +21,7 @@ from src.utils import (
     check_directory_path_existence,
     save_json_file,
     set_physical_devices_memory_limit,
+    save_text_file,
 )
 from src.dataset import Dataset
 from src.model import Model
@@ -118,10 +119,8 @@ class Train(object):
         )
 
         # Creates checkpoint manager for the neural network model and loads the optimizer.
-        self.checkpoint_directory_path = (
-            "{}/models/digit_recognizer/v{}/checkpoints".format(
-                self.home_directory_path, self.model_version
-            )
+        self.checkpoint_directory_path = "{}/models/v{}/checkpoints".format(
+            self.home_directory_path, self.model_version
         )
         checkpoint = tf.train.Checkpoint(model=self.model)
         self.manager = tf.train.CheckpointManager(
@@ -155,12 +154,12 @@ class Train(object):
         model_summary = list()
         model.summary(print_fn=lambda x: model_summary.append(x))
         model_summary = "\n".join(model_summary)
-        add_to_log(model_summary)
-        add_to_log("")
+        print(model_summary)
+        print()
 
         # Creates the following directory path if it does not exist.
         self.reports_directory_path = check_directory_path_existence(
-            "models/digit_recognizer/v{}/reports".format(self.model_version)
+            "models/v{}/reports".format(self.model_version)
         )
 
         # Plots the model & saves it as a PNG file.
@@ -172,12 +171,15 @@ class Train(object):
                 show_layer_names=True,
                 expand_nested=True,
             )
-            add_to_log(
+            print(
                 "Finished saving model plot at {}/model_plot.png.".format(
                     self.reports_directory_path
                 )
             )
-            add_to_log("")
+
+            # Saves string as a text file.
+            save_text_file(model_summary, "model_summary", self.reports_directory_path)
+            print()
 
     def initialize_model_history(self) -> None:
         """Creates empty dictionary for saving the model metrics for the current model.
