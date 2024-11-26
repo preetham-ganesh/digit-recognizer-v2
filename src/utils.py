@@ -113,12 +113,8 @@ def set_physical_devices_memory_limit() -> None:
 
     # If GPU device is found in the system, then the memory limit is set.
     if len(gpu_devices) > 0:
+        tf.config.experimental.set_visible_devices(gpu_devices[0], "GPU")
         tf.config.experimental.set_memory_growth(gpu_devices[0], enable=True)
-        gpu_available = True
-    else:
-        gpu_available = False
-
-    if gpu_available:
         print("GPU is available and will be used as accelerator.")
     else:
         print("GPU is not available, hence the model will be executed on CPU.")
