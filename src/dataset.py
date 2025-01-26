@@ -46,13 +46,10 @@ class Dataset(object):
         """
         self.home_directory_path = os.getcwd()
         self.original_train_data = pd.read_csv(
-            "{}/data/raw_data/train.csv".format(self.home_directory_path)
+            os.path.join(self.home_directory_path, "data", "raw_data", "train.csv")
         )
-
         print(
-            "No. of examples in the original train data: {}".format(
-                len(self.original_train_data)
-            )
+            f"No. of examples in the original train data: {len(self.original_train_data)}"
         )
         print()
 
@@ -92,13 +89,11 @@ class Dataset(object):
         self.n_validation_examples = len(self.new_validation_data)
         self.n_test_examples = len(self.new_test_data)
 
-        print("No. of examples in the new train data: {}".format(self.n_train_examples))
+        print(f"No. of examples in the new train data: {self.n_train_examples}")
         print(
-            "No. of examples in the new validation data: {}".format(
-                self.n_validation_examples
-            )
+            f"No. of examples in the new validation data: {self.n_validation_examples}"
         )
-        print("No. of examples in the new test data: {}".format(self.n_test_examples))
+        print(f"No. of examples in the new test data: {self.n_test_examples}")
         print()
 
     def shuffle_slice_dataset(self) -> None:
@@ -151,13 +146,9 @@ class Dataset(object):
         )
         self.n_test_steps_per_epoch = self.n_test_examples // self.batch_size
 
-        print("No. of train steps per epoch: {}".format(self.n_train_steps_per_epoch))
-        print(
-            "No. of validation steps per epoch: {}".format(
-                self.n_validation_steps_per_epoch
-            )
-        )
-        print("No. of test steps per epoch: {}".format(self.n_test_steps_per_epoch))
+        print(f"No. of train steps per epoch: {self.n_train_steps_per_epoch}")
+        print(f"No. of validation steps per epoch: {self.n_validation_steps_per_epoch}")
+        print(f"No. of test steps per epoch: {self.n_test_steps_per_epoch}")
         print()
 
     def invert_image(self, image: np.ndarray) -> np.ndarray:
@@ -226,7 +217,12 @@ class Dataset(object):
 
             # Checks if probability is greater than 0.5. If greater then inverts black & white image -> white & black.
             if random.random() >= 0.5:
-                images[image_id, :, :] = self.invert_image(images[image_id])
+                images[image_id, :, :] = np.where(
+                    images[image_id, :, :]
+                    > self.model_configuration["model"]["threshold"],
+                    0,
+                    255,
+                )
 
         # Adds extra dimension to the images array.
         images = np.expand_dims(images, axis=3)
