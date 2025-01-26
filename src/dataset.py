@@ -5,7 +5,6 @@ from sklearn.utils import shuffle
 from sklearn.model_selection import train_test_split
 import tensorflow as tf
 import numpy as np
-import cv2
 import random
 
 from typing import Dict, Any, List
@@ -150,35 +149,6 @@ class Dataset(object):
         print(f"No. of validation steps per epoch: {self.n_validation_steps_per_epoch}")
         print(f"No. of test steps per epoch: {self.n_test_steps_per_epoch}")
         print()
-
-    def invert_image(self, image: np.ndarray) -> np.ndarray:
-        """Inverts the image from black & white to white & black.
-
-        Inverts the image from black & white to white & black.
-
-        Args:
-            image: A NumPy array for the input image.
-
-        Returns:
-            A NumPy array for inverted version of the input image.
-        """
-        # Checks type & values of arguments.
-        assert isinstance(
-            image, np.ndarray
-        ), "Variable image should be of type 'np.ndarray'."
-
-        # Converts 2D image into 3D by stacking it.
-        new_image = np.zeros((image.shape[0], image.shape[1], 3))
-        new_image[:, :, 0] = image
-        new_image[:, :, 1] = image
-        new_image[:, :, 2] = image
-
-        # Inverts the image from black & white to white & black.
-        _, inverted_image = cv2.threshold(new_image, 127, 255, cv2.THRESH_BINARY_INV)
-
-        # Extracts the 1st channel from the inverted image.
-        inverted_2d_image = inverted_image[:, :, 0]
-        return inverted_2d_image
 
     def load_input_target_batches(
         self, images: np.ndarray, labels: np.ndarray
