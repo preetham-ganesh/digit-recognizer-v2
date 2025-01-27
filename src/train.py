@@ -45,8 +45,8 @@ class Train(object):
             None.
         """
         self.home_directory_path = os.getcwd()
-        model_configuration_directory_path = "{}/configs".format(
-            self.home_directory_path
+        model_configuration_directory_path = os.path.join(
+            self.home_directory_path, "configs"
         )
         self.model_configuration = load_json_file(
             "v{}".format(self.model_version), model_configuration_directory_path
@@ -89,6 +89,9 @@ class Train(object):
         # Loads model for current model configuration.
         self.model = Model(self.model_configuration)
 
+        # Builds plottable graph for the model.
+        self.model = self.model.build_graph()
+
         # Loads the optimizer.
         self.optimizer = tf.keras.optimizers.Adam(
             learning_rate=self.model_configuration["model"]["optimizer"][
@@ -97,12 +100,14 @@ class Train(object):
         )
 
         # Creates checkpoint manager for the neural network model and loads the optimizer.
-        self.checkpoint_directory_path = "{}/models/v{}/checkpoints".format(
-            self.home_directory_path, self.model_version
+        self.checkpoint_directory_path = os.path.join(
+            self.home_directory_path, "models", f"v{self.model_version}", "checkpoints"
         )
-        self.checkpoint = tf.train.Checkpoint(model=self.model)
+        self.checkpoint = tf.train.Checkpoint(
+            model=self.model, optimizer=self.optimizer
+        )
         self.manager = tf.train.CheckpointManager(
-            self.checkpoint, directory=self.checkpoint_directory_path, max_to_keep=3
+            self.checkpoint, directory=self.checkpoint_directory_path, max_to_keep=1
         )
         print("Finished loading model for current configuration.")
         print()
@@ -118,28 +123,25 @@ class Train(object):
         Returns:
             None.
         """
-        # Builds plottable graph for the model.
-        model = self.model.build_graph()
-
         # Compiles the model to log the model summary.
         model_summary = list()
-        model.summary(print_fn=lambda x: model_summary.append(x))
+        self.model.summary(print_fn=lambda x: model_summary.append(x))
         model_summary = "\n".join(model_summary)
         mlflow.log_text(
             model_summary,
-            "v{}/model_summary.txt".format(self.model_configuration["version"]),
+            os.path.join(f"v{self.model_version}", "model_summary.txt"),
         )
 
         # Creates the following directory path if it does not exist.
         self.reports_directory_path = check_directory_path_existence(
-            "models/v{}/reports".format(self.model_version)
+            os.path.join("models", f"v{self.model_version}", "reports")
         )
 
         # Plots the model & saves it as a PNG file.
         if plot:
             tf.keras.utils.plot_model(
-                model,
-                "{}/model_plot.png".format(self.reports_directory_path),
+                self.model,
+                os.path.join(self.reports_directory_path, "model_plot.png"),
                 show_shapes=True,
                 show_layer_names=True,
                 expand_nested=True,
@@ -147,8 +149,8 @@ class Train(object):
 
             # Logs the saved model plot PNG file.
             mlflow.log_artifact(
-                "{}/model_plot.png".format(self.reports_directory_path),
-                "v{}".format(self.model_configuration["version"]),
+                os.path.join(self.reports_directory_path, "model_plot.png"),
+                f"v{self.model_version}",
             )
 
     def initialize_metric_trackers(self) -> None:
