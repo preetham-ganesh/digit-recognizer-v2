@@ -38,34 +38,16 @@ Use the following commands to run the code files in the repo:
 
 Note: All code files should be executed in home directory.
 
-### Dataset
-
-- The data was downloaded from Kaggle - Digit Recognizer competition [[Link]](https://www.kaggle.com/c/digit-recognizer/data).
-- Due to the size of the data, it is not available in the repository.
-- After downloading the data, 'train.csv' file should be saved in the following data directory path 'data/raw_data/digit_recognizer/train.csv'.
-
 ### Model Training & Testing
 
 ```bash
-python3 src/digit_recognizer/train.py --model_version 1.0.0
+python3 src/run.py --experiment_name digit_recognizer --model_version 1.0.0
 ```
 
 or
 
 ```bash
-python3 src/digit_recognizer/train.py -mv 1.0.0
-```
-
-### Serialization
-
-```bash
-python3 src/digit_recognizer/serialize.py --model_version 1.0.0
-```
-
-or
-
-```bash
-python3 src/digit_recognizer/serialize.py -mv 1.0.0
+python3 src/run.py -en digit_recognizer -mv 1.0.0
 ```
 
 ## Releases
