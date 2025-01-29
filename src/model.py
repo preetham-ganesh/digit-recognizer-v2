@@ -67,9 +67,15 @@ class Model(tf.keras.Model):
                     name=name,
                 )
 
-            # If layer's name is like 'flatten_', a Flatten layer is initialized.
+            # If layer's name is like 'flatten_', a Flatten layer is initialized based on layer configuration.
             elif name.split("_")[0] == "flatten":
                 self.model_layers[name] = tf.keras.layers.Flatten(name=name)
+
+            # If layer's name is like 'resize_', a Resizing layer is initialized based on layer configuration.
+            elif name.split("_")[0] == "resize":
+                self.model_layers[name] = tf.keras.layers.Resizing(
+                    height=config["height"], width=config["width"], name=name
+                )
 
     def call(
         self,
