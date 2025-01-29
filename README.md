@@ -56,10 +56,6 @@ python3 src/run.py -en digit_recognizer -mv 1.0.0
 | ---------------- | ------------- | ---------------------------------------------- | ---------------- | ---------------------------------------------------------------------- |
 | Digit Recognizer | v1.0.0        | A CNN model that recognizes digit in an image. | Accuracy: 98.54% | [Hugging Face](https://huggingface.co/preethamganesh/digit-recognizer) |
 
-## Releases
+## Support
 
-Details about the latest releases, including key features, bug fixes, and any other relevant information.
-
-| Version | Release Date | Release Notes                                                           |
-| ------- | ------------ | ----------------------------------------------------------------------- |
-| v1.0.0  | 03-10-2024   | Release Training, Testing & Serialization code (Sub-classing approach). |
+For any queries regarding the repository please contact 'preetham.ganesh2021@gmail.com'.
