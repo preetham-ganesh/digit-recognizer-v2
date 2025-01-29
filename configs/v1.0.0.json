@@ -8,12 +8,15 @@
     "batch_size": 64,
     "n_channels": 1,
     "n_classes": 10,
+    "threshold": 127,
     "optimizer": {
       "name": "adam",
       "learning_rate": 0.001
     },
+    "patience_count": 3,
     "layers": {
       "arrangement": [
+        "resize",
         "conv2d_0",
         "conv2d_1",
         "maxpool2d_0",
@@ -28,6 +31,7 @@
         "dense_2"
       ],
       "configuration": {
+        "resize": { "height": 28, "width": 28 },
         "conv2d_0": {
           "filters": 8,
           "kernel_size": 3,

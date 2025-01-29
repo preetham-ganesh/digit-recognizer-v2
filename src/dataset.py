@@ -2,12 +2,10 @@ import os
 
 import pandas as pd
 from sklearn.utils import shuffle
+from sklearn.model_selection import train_test_split
 import tensorflow as tf
 import numpy as np
-import cv2
 import random
-
-from src.utils import add_to_log
 
 from typing import Dict, Any, List
 
@@ -47,17 +45,12 @@ class Dataset(object):
         """
         self.home_directory_path = os.getcwd()
         self.original_train_data = pd.read_csv(
-            "{}/data/raw_data/digit_recognizer/train.csv".format(
-                self.home_directory_path
-            )
+            os.path.join(self.home_directory_path, "data", "raw_data", "train.csv")
         )
-
-        add_to_log(
-            "No. of examples in the original train data: {}".format(
-                len(self.original_train_data)
-            )
+        print(
+            f"No. of examples in the original train data: {len(self.original_train_data)}"
         )
-        add_to_log("")
+        print()
 
     def split_dataset(self) -> None:
         """Splits original train data into new train, validation & test data.
@@ -70,47 +63,37 @@ class Dataset(object):
         Returns:
             None.
         """
-        # Computes number of examples in the train, validation and test datasets.
-        self.n_total_examples = len(self.original_train_data)
-        self.n_validation_examples = int(
-            self.model_configuration["dataset"]["split_percentage"]["validation"]
-            * self.n_total_examples
-        )
-        self.n_test_examples = int(
-            self.model_configuration["dataset"]["split_percentage"]["test"]
-            * self.n_total_examples
-        )
-        self.n_train_examples = (
-            self.n_total_examples - self.n_validation_examples - self.n_test_examples
-        )
-
         # Shuffles the original train data.
-        self.original_train_data = shuffle(self.original_train_data, random_state=2)
+        self.original_train_data = shuffle(self.original_train_data, random_state=42)
 
-        # Splits the original train data into new train, validation & test data.
-        self.new_validation_data = self.original_train_data[
-            : self.n_validation_examples
-        ]
-        self.new_test_data = self.original_train_data[
-            self.n_validation_examples : self.n_test_examples
-            + self.n_validation_examples
-        ]
-        self.new_train_data = self.original_train_data[
-            self.n_test_examples + self.n_validation_examples :
-        ]
+        # Splits the original train data into new train, validation & test data (in stratified manner).
+        train_data, self.new_test_data = train_test_split(
+            self.original_train_data,
+            test_size=self.model_configuration["dataset"]["split_percentage"]["test"],
+            stratify=self.original_train_data["label"],
+            random_state=42,
+        )
+        self.new_train_data, self.new_validation_data = train_test_split(
+            train_data,
+            test_size=self.model_configuration["dataset"]["split_percentage"][
+                "validation"
+            ],
+            stratify=train_data["label"],
+            random_state=42,
+        )
+        del train_data
 
-        add_to_log(
-            "No. of examples in the new train data: {}".format(self.n_train_examples)
+        # Stores size of new train, validation and test data.
+        self.n_train_examples = len(self.new_train_data)
+        self.n_validation_examples = len(self.new_validation_data)
+        self.n_test_examples = len(self.new_test_data)
+
+        print(f"No. of examples in the new train data: {self.n_train_examples}")
+        print(
+            f"No. of examples in the new validation data: {self.n_validation_examples}"
         )
-        add_to_log(
-            "No. of examples in the new validation data: {}".format(
-                self.n_validation_examples
-            )
-        )
-        add_to_log(
-            "No. of examples in the new test data: {}".format(self.n_test_examples)
-        )
-        add_to_log("")
+        print(f"No. of examples in the new test data: {self.n_test_examples}")
+        print()
 
     def shuffle_slice_dataset(self) -> None:
         """Converts split data into tensor dataset & slices them based on batch size.
@@ -162,47 +145,10 @@ class Dataset(object):
         )
         self.n_test_steps_per_epoch = self.n_test_examples // self.batch_size
 
-        add_to_log(
-            "No. of train steps per epoch: {}".format(self.n_train_steps_per_epoch)
-        )
-        add_to_log(
-            "No. of validation steps per epoch: {}".format(
-                self.n_validation_steps_per_epoch
-            )
-        )
-        add_to_log(
-            "No. of test steps per epoch: {}".format(self.n_test_steps_per_epoch)
-        )
-        add_to_log("")
-
-    def invert_image(self, image: np.ndarray) -> np.ndarray:
-        """Inverts the image from black & white to white & black.
-
-        Inverts the image from black & white to white & black.
-
-        Args:
-            image: A NumPy array for the input image.
-
-        Returns:
-            A NumPy array for inverted version of the input image.
-        """
-        # Checks type & values of arguments.
-        assert isinstance(
-            image, np.ndarray
-        ), "Variable image should be of type 'np.ndarray'."
-
-        # Converts 2D image into 3D by stacking it.
-        new_image = np.zeros((image.shape[0], image.shape[1], 3))
-        new_image[:, :, 0] = image
-        new_image[:, :, 1] = image
-        new_image[:, :, 2] = image
-
-        # Inverts the image from black & white to white & black.
-        _, inverted_image = cv2.threshold(new_image, 127, 255, cv2.THRESH_BINARY_INV)
-
-        # Extracts the 1st channel from the inverted image.
-        inverted_2d_image = inverted_image[:, :, 0]
-        return inverted_2d_image
+        print(f"No. of train steps per epoch: {self.n_train_steps_per_epoch}")
+        print(f"No. of validation steps per epoch: {self.n_validation_steps_per_epoch}")
+        print(f"No. of test steps per epoch: {self.n_test_steps_per_epoch}")
+        print()
 
     def load_input_target_batches(
         self, images: np.ndarray, labels: np.ndarray
@@ -241,7 +187,12 @@ class Dataset(object):
 
             # Checks if probability is greater than 0.5. If greater then inverts black & white image -> white & black.
             if random.random() >= 0.5:
-                images[image_id, :, :] = self.invert_image(images[image_id])
+                images[image_id, :, :] = np.where(
+                    images[image_id, :, :]
+                    > self.model_configuration["model"]["threshold"],
+                    0,
+                    255,
+                )
 
         # Adds extra dimension to the images array.
         images = np.expand_dims(images, axis=3)
