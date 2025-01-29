@@ -27,6 +27,11 @@ Requires: [Pip](https://pypi.org/project/pip/)
 pip install --no-cache-dir -r requirements.txt
 ```
 
+## Dataset
+
+- The data was downloaded from Kaggle - Digit Recognizer competition [[Link]](https://www.kaggle.com/c/digit-recognizer/data).
+- After downloading the data, 'train.csv' file should be saved in the following data directory path 'data/raw_data/train.csv'.
+
 ## Usage
 
 Use the following commands to run the code files in the repo:
