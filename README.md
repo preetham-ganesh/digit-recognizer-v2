@@ -1,20 +1,22 @@
-# Digit Recognizer v2 (Training)
+# Digit Recognizer
 
 This repository contains code used to train the Deep Learning models in the Digit Recognizer project.
 
 ## Contents
 
-- [Installation](https://github.com/preetham-ganesh/digit-recognizer-v2-training#installation)
-- [Usage](https://github.com/preetham-ganesh/digit-recognizer-v2-training#usage)
-- [Releases](https://github.com/preetham-ganesh/digit-recognizer-v2-training#releases)
+- [Installation](https://github.com/preetham-ganesh/digit-recognizer#installation)
+- [Dataset](https://github.com/preetham-ganesh/digit-recognizer#dataset)
+- [Usage](https://github.com/preetham-ganesh/digit-recognizer#usage)
+- [Model Details](https://github.com/preetham-ganesh/digit-recognizer#model-details)
+- [Support](https://github.com/preetham-ganesh/digit-recognizer#support)
 
 ## Installation
 
 ### Download the repo
 
 ```bash
-git clone https://github.com/preetham-ganesh/digit-recognizer-v2-training
-cd digit-recognizer-v2-training
+git clone https://github.com/preetham-ganesh/digit-recognizer.git
+cd digit-recognizer
 ```
 
 ### Requirements Installation
