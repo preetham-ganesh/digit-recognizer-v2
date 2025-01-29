@@ -50,6 +50,12 @@ or
 python3 src/run.py -en digit_recognizer -mv 1.0.0
 ```
 
+## Model Details
+
+| Model Name       | Model Version | Description                                    | Performance      | Model URL                                                              |
+| ---------------- | ------------- | ---------------------------------------------- | ---------------- | ---------------------------------------------------------------------- |
+| Digit Recognizer | v1.0.0        | A CNN model that recognizes digit in an image. | Accuracy: 98.54% | [Hugging Face](https://huggingface.co/preethamganesh/digit-recognizer) |
+
 ## Releases
 
 Details about the latest releases, including key features, bug fixes, and any other relevant information.
