@@ -247,9 +247,9 @@ class Train(object):
 
         # Computes the model output for current batch, and metrics for current model output.
         with tf.GradientTape() as tape:
-            predictions = self.model([input_batch], training=True, masks=None)
-            loss = self.compute_loss(target_batch, predictions[0])
-            accuracy = self.compute_accuracy(target_batch, predictions[0])
+            predictions = self.model([input_batch], training=True)
+            loss = self.compute_loss(target_batch, predictions)
+            accuracy = self.compute_accuracy(target_batch, predictions)
 
         # Computes gradients using loss and model variables.
         gradients = tape.gradient(loss, self.model.trainable_variables)
@@ -282,9 +282,9 @@ class Train(object):
         ), "Variable target_batch should be of type 'tf.Tensor'."
 
         # Computes the model output for current batch, and metrics for current model output.
-        predictions = self.model([input_batch], training=False, masks=None)
-        loss = self.compute_loss(target_batch, predictions[0])
-        accuracy = self.compute_accuracy(target_batch, predictions[0])
+        predictions = self.model([input_batch], training=False)
+        loss = self.compute_loss(target_batch, predictions)
+        accuracy = self.compute_accuracy(target_batch, predictions)
 
         # Computes batch metrics and appends it to main metrics.
         self.validation_loss(loss)
@@ -334,15 +334,10 @@ class Train(object):
             # Trains the model using the current input and target batch.
             self.train_step(input_batch, target_batch)
             batch_end_time = time.time()
-
             print(
-                "Epoch={}, Batch={}, Train loss={}, Train accuracy={}, Time taken={} sec.".format(
-                    epoch + 1,
-                    batch,
-                    str(round(self.train_loss.result().numpy(), 3)),
-                    str(round(self.train_accuracy.result().numpy(), 3)),
-                    round(batch_end_time - batch_start_time, 3),
-                )
+                f"Epoch={epoch + 1}, Batch={batch}, Train loss={self.train_loss.result().numpy():.3f}, "
+                + f"Train accuracy={self.train_accuracy.result().numpy():.3f}, "
+                + f"Time taken={(batch_end_time - batch_start_time):.3f} sec."
             )
 
         # Logs train metrics for current epoch.
@@ -387,13 +382,9 @@ class Train(object):
             batch_end_time = time.time()
 
             print(
-                "Epoch={}, Batch={}, Validation loss={}, Validation accuracy={}, Time taken={} sec.".format(
-                    epoch + 1,
-                    batch,
-                    str(round(self.validation_loss.result().numpy(), 3)),
-                    str(round(self.validation_accuracy.result().numpy(), 3)),
-                    round(batch_end_time - batch_start_time, 3),
-                )
+                f"Epoch={epoch + 1}, Batch={batch}, Validation loss={self.validation_loss.result().numpy():.3f}, "
+                + f"Validation accuracy={self.validation_accuracy.result().numpy():.3f}, "
+                + f"Time taken={(batch_end_time - batch_start_time):.3f} sec."
             )
 
         # Logs train metrics for current epoch.
@@ -418,7 +409,7 @@ class Train(object):
             None.
         """
         self.manager.save()
-        print("Checkpoint saved at {}.".format(self.checkpoint_directory_path))
+        print(f"Checkpoint saved at {self.checkpoint_directory_path}.")
 
     def early_stopping(self) -> bool:
         """Stops the model from learning further if the performance has not improved from previous epoch.
@@ -434,31 +425,29 @@ class Train(object):
         # If epoch = 1, then best validation loss is replaced with current validation loss, & the checkpoint is saved.
         if self.best_validation_loss is None:
             self.patience_count = 0
-            self.best_validation_loss = str(
-                round(self.validation_loss.result().numpy(), 3)
+            self.best_validation_loss = round(
+                float(self.validation_loss.result().numpy()), 3
             )
             self.save_model()
 
         # If best validation loss is higher than current validation loss, the best validation loss is replaced with
         # current validation loss, & the checkpoint is saved.
-        elif self.best_validation_loss > str(
-            round(self.validation_loss.result().numpy(), 3)
+        elif self.best_validation_loss > round(
+            float(self.validation_loss.result().numpy()), 3
         ):
             self.patience_count = 0
             print(
-                "Best validation loss changed from {} to {}".format(
-                    str(self.best_validation_loss),
-                    str(round(self.validation_loss.result().numpy(), 3)),
-                )
+                f"Best validation loss changed from {self.best_validation_loss} to "
+                + f"{self.validation_loss.result().numpy():.3f}"
             )
-            self.best_validation_loss = str(
-                round(self.validation_loss.result().numpy(), 3)
+            self.best_validation_loss = round(
+                float(self.validation_loss.result().numpy()), 3
             )
             self.save_model()
 
         # If best validation loss is not higher than the current validation loss, then the number of times the model
         # has not improved is incremented by 1.
-        elif self.patience_count < 2:
+        elif self.patience_count < self.model_configuration["model"]["patience_count"]:
             self.patience_count += 1
             print("Best validation loss did not improve.")
             print("Checkpoint not saved.")
@@ -468,7 +457,9 @@ class Train(object):
             return False
         return True
 
-    def fit(self) -> None:
+    def fit(
+        self,
+    ) -> None:
         """Trains & validates the loaded model using train & validation dataset.
 
         Trains & validates the loaded model using train & validation dataset.
@@ -497,15 +488,11 @@ class Train(object):
 
             epoch_end_time = time.time()
             print(
-                "Epoch={}, Train loss={}, Validation loss={}, Train Accuracy={}, Validation Accuracy={}, "
-                "Time taken={} sec.".format(
-                    epoch + 1,
-                    str(round(self.train_loss.result().numpy(), 3)),
-                    str(round(self.validation_loss.result().numpy(), 3)),
-                    str(round(self.train_accuracy.result().numpy(), 3)),
-                    str(round(self.validation_accuracy.result().numpy(), 3)),
-                    round(epoch_end_time - epoch_start_time, 3),
-                )
+                f"Epoch={epoch + 1}, Train loss={self.train_loss.result().numpy():.3f}, "
+                + f"Validation loss={self.validation_loss.result().numpy():.3f}, "
+                + f"Train Accuracy={self.train_accuracy.result().numpy():.3f}, "
+                + f"Validation Accuracy={self.validation_accuracy.result().numpy():.3f}, "
+                + f"Time taken={(epoch_end_time - epoch_start_time):.3f} sec."
             )
 
             # Stops the model from learning further if the performance has not improved from previous epoch.
@@ -533,9 +520,7 @@ class Train(object):
         self.reset_metrics_trackers()
 
         # Restore latest saved checkpoint if available.
-        self.checkpoint.restore(
-            tf.train.latest_checkpoint(self.checkpoint_directory_path)
-        )
+        self.checkpoint.restore(self.manager.latest_checkpoint)
 
         # Iterates across batches in the train dataset.
         for batch, (images, labels) in enumerate(
@@ -549,14 +534,8 @@ class Train(object):
             # Tests the model using the current input and target batch.
             self.validation_step(input_batch, target_batch)
 
-        print(
-            "Test loss={}.".format(str(round(self.validation_loss.result().numpy(), 3)))
-        )
-        print(
-            "Test accuracy={}.".format(
-                str(round(self.validation_accuracy.result().numpy(), 3))
-            ),
-        )
+        print(f"Test loss: {self.validation_loss.result().numpy():.3f}.")
+        print(f"Test accuracy: {self.validation_accuracy.result().numpy():.3f}")
         print()
 
         # Logs test metrics for current epoch.
@@ -580,103 +559,47 @@ class Train(object):
         """
         # Defines input shape for exported model's input signature.
         input_shape = [
-            None,
+            2,
             self.model_configuration["model"]["final_image_height"],
             self.model_configuration["model"]["final_image_width"],
             self.model_configuration["model"]["n_channels"],
         ]
 
-        class ExportModel(tf.Module):
-            """Exports trained tensorflow model as tensorflow module for serving."""
+        # Predicts output for the sample input using the model
+        input_data = tf.ones(input_shape)
+        output_0 = self.model.predict(input_data)
 
-            def __init__(self, model: tf.keras.Model) -> None:
-                """Initializes the variables in the class.
-
-                Initializes the variables in the class.
-
-                Args:
-                    model: A tensorflow model for the model trained with latest checkpoints.
-
-                Returns:
-                    None.
-                """
-                # Asserts type of input arguments.
-                assert isinstance(
-                    model, tf.keras.Model
-                ), "Variable model should be of type 'tensorflow.keras.Model'."
-
-                # Initializes class variables.
-                self.model = model
-
-            @tf.function(
-                input_signature=[tf.TensorSpec(shape=input_shape, dtype=tf.float32)]
-            )
-            def predict(self, images: tf.Tensor) -> tf.Tensor:
-                """Input image is passed through the model for prediction.
-
-                Input image is passed through the model for prediction.
-
-                Args:
-                    images: A tensor for the processed image for which the model should predict the result.
-
-                Return:
-                    An integer for the number predicted by the model for the current image.
-                """
-                prediction = self.model([images], training=False, masks=None)
-                return prediction
-
-        # Exports trained tensorflow model as tensorflow module for serving.
-        exported_model = ExportModel(self.model)
-
-        # Predicts output for the sample input using the Exported model.
-        output_0 = exported_model.predict(
-            tf.ones(
-                (
-                    10,
-                    self.model_configuration["model"]["final_image_height"],
-                    self.model_configuration["model"]["final_image_width"],
-                    self.model_configuration["model"]["n_channels"],
-                )
-            )
+        # Saves the model in TF Saved Model format.
+        serialized_model_directory_path = os.path.join(
+            self.home_directory_path, "models", f"v{self.model_version}", "serialized"
         )
-
-        # Saves the tensorflow object created from the loaded model.
-        home_directory_path = os.getcwd()
-        tf.saved_model.save(
-            exported_model,
-            "{}/models/v{}/serialized".format(home_directory_path, self.model_version),
-        )
+        os.makedirs(os.path.dirname(serialized_model_directory_path), exist_ok=True)
+        self.model.export(serialized_model_directory_path)
 
         # Loads the serialized model to check if the loaded model is callable.
-        exported_model = tf.saved_model.load(
-            "{}/models/v{}/serialized".format(home_directory_path, self.model_version),
-        )
-        output_1 = exported_model.predict(
-            tf.ones(
-                (
-                    10,
-                    self.model_configuration["model"]["final_image_height"],
-                    self.model_configuration["model"]["final_image_width"],
-                    self.model_configuration["model"]["n_channels"],
-                )
-            )
-        )
+        exported_model = tf.saved_model.load(serialized_model_directory_path)
+
+        # Get the callable signature (default is "serving_default")
+        serving_model = exported_model.signatures["serving_default"]
+
+        # Predicts output for the sample input using the model
+        output_1 = serving_model(input_data)
 
         # Checks if the shape between output from saved & loaded models matches.
         assert (
-            output_0[0].shape == output_1[0].shape
+            output_0.shape == output_1["output_0"].shape
         ), "Shape does not match between the output from saved & loaded models."
         print("Finished serializing model & configuration files.")
         print()
 
         # Logs serialized model as artifact.
         mlflow.log_artifacts(
-            "{}/models/v{}/serialized".format(home_directory_path, self.model_version),
-            "v{}/model".format(self.model_configuration["version"]),
+            serialized_model_directory_path,
+            os.path.join(f"v{self.model_configuration['version']}", "model"),
         )
 
         # Logs updated model configuration as artifact.
         mlflow.log_dict(
             self.model_configuration,
-            "v{}/model_configuration.json".format(self.model_version),
+            os.path.join(f"v{self.model_version}", "model_configuration.json"),
         )
